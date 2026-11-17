@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0d3b2e">
+<title>Derby Trivia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#0d3b2e;--green2:#14523f;--rose:#b5152b;--gold:#d4af37;--cream:#f7f1e3;--A:#b5152b;--B:#c9962a;--C:#1f7a5a;--D:#24427a;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{min-height:100%;background:radial-gradient(ellipse at 50% 0%,var(--green2),var(--green) 70%);color:var(--cream);font-family:Montserrat,Arial,sans-serif}
+  body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+  header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(212,175,55,.35)}
+  main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:20px;text-align:center}
+  h1{font-family:"Playfair Display",serif;font-weight:900;font-size:34px;line-height:1.15;margin-bottom:10px}
+  h2{font-family:"Playfair Display",serif;font-weight:900;font-size:26px;margin-bottom:8px}
+  p{font-size:17px;line-height:1.45;opacity:.92}
+  .gold{color:var(--gold)}
+  input{width:100%;font:600 22px Montserrat;padding:16px;border-radius:12px;border:2px solid var(--gold);margin:18px 0 12px;text-align:center}
+  .btn{display:block;width:100%;font:800 20px Montserrat;padding:18px;border-radius:12px;border:0;background:var(--gold);color:#10241d;cursor:pointer}
+  .btn:disabled{opacity:.5}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+  .ans{display:flex;align-items:center;gap:14px;text-align:left;border:0;border-radius:16px;padding:16px;min-height:82px;color:#fff;font:700 18px Montserrat;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.3)}
+  .ans:active{transform:translateY(2px);box-shadow:none}
+  .ans .L{flex:none;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800}
+  .big{font-size:88px;font-weight:900;font-family:"Playfair Display",serif;line-height:1}
+  .card{background:rgba(0,0,0,.25);border:1px solid rgba(212,175,55,.4);border-radius:16px;padding:18px;margin-top:18px}
+  .row{display:flex;justify-content:space-around;margin-top:6px}
+  .row div{font-size:13px;text-transform:uppercase;letter-spacing:.1em;opacity:.8}
+  .row b{display:block;font-size:30px;color:var(--gold);letter-spacing:0;opacity:1}
+  .timer{font-size:15px;font-weight:700;color:var(--gold);margin-bottom:6px}
+  .ok{color:#7be0a8}.no{color:#ff8a9a}
+  .small{font-size:13px;opacity:.6;margin-top:22px}
+  a{color:var(--gold)}
+  .pulse{animation:p 1.4s infinite}@keyframes p{50%{opacity:.4}}
+</style>
+</head>
+<body>
+<header><span id="org"></span><span id="me"></span></header>
+<main id="main"><p class="pulse">Loading&hellip;</p></main>
+
+<script src="config.js"></script>
+<script src="game-api.js"></script>
+<script>
+const C = GAME_CONFIG, API = GameAPI, Q = C.questions, N = Q.length, SEC = C.secondsPerQuestion || 20;
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("#org").textContent = C.org;
+
+// device id: localStorage live (survives refresh); per-tab in demo so several tabs = several players
+const store = API.DEMO ? sessionStorage : localStorage, DKEY = "derbyDevice";
+if (new URLSearchParams(location.search).has("newphone")) store.removeItem(DKEY);
+let device = store.getItem(DKEY);
+if (!device) { device = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2)); store.setItem(DKEY, device); }
+
+let editing = false, me = null, state = null, lastKey = "", sending = false, pendingChoice = null, timerH = null, failCount = 0;
+
+function view(html){ $("#main").innerHTML = html; }
+
+function joinForm(msg){
+  view(`<h1>Derby <span class="gold">Trivia</span></h1><p>Enter your first name and last initial</p>
+    <input id="nm" maxlength="20" placeholder="e.g. Tony C" autocomplete="off">
+    <button class="btn" id="go">Join the Race</button>
+    ${msg?`<p class="no" style="margin-top:12px">${esc(msg)}</p>`:""}`);
+  $("#go").onclick = doJoin; $("#nm").onkeydown = (e) => { if (e.key === "Enter") doJoin(); };
+  setTimeout(()=>$("#nm").focus(), 100);
+}
+async function doJoin(){
+  const n = $("#nm").value.trim(); if (!n) return;
+  $("#go").disabled = true;
+  try { const r = await API.join(device, n); if (r !== "ok") return joinForm("Please enter a name."); editing = false; me = null; lastKey = ""; await refreshMe(); render(true); }
+  catch(e){ joinForm("Can't reach the game. Check your connection and try again."); }
+}
+
+async function refreshMe(){ try { me = await API.myStatus(device); } catch(e){} }
+
+async function pick(L){
+  if (sending || pendingChoice) return; sending = true; pendingChoice = L;
+  try {
+    const r = await API.submit(device, state.round, L);
+    if (r === "not_joined") { me = null; return joinForm("Please join again."); }
+    if (r === "closed") pendingChoice = null;
+  } catch(e){ pendingChoice = null; }
+  sending = false; lastKey = ""; render(true);
+}
+
+function statsCard(){
+  if (!me || !me.joined) return "";
+  return `<div class="card"><div class="row"><div>Score<b>${(me.score||0).toLocaleString()}</b></div>
+    <div>Rank<b>${me.rank||"-"}<span style="font-size:16px;opacity:.7"> / ${me.players||"-"}</span></b></div>
+    <div>Correct<b>${me.correct||0}</b></div></div></div>`;
+}
+
+function render(force){
+  if (!state) return;
+  const s = state, key = s.status + "|" + s.round + "|" + (pendingChoice||"") + "|" + JSON.stringify(me||{});
+  if (!force && key === lastKey) return; lastKey = key;
+  clearInterval(timerH);
+  $("#me").textContent = me && me.joined ? me.name : "";
+  if (!me || !me.joined) { if (!$("#nm")) joinForm(); return; }
+  if (editing && $("#nm")) return;
+
+  if (s.status === "idle" && s.round > 0) return view(`<p class="gold" style="letter-spacing:.2em;font-weight:800">QUESTION ${s.round} OF ${N}</p>
+      <h1 style="margin-top:10px">Get ready&hellip;</h1><p>Read the question on the big screen.</p>${statsCard()}`);
+  if (s.status === "idle" || s.status === "join") return view(`<h1>You're in, <span class="gold">${esc(me.name)}</span>!</h1>
+      <p>Watch the big screen &mdash; the race starts soon.</p><p style="margin-top:14px">Answer fast: <b>1,000 pts</b> for a correct answer plus up to <b>500 speed bonus</b>.</p>
+      <p class="small">Wrong name? <a href="#" onclick="editing=true;joinForm();return false">Change it</a></p>`);
+
+  if (s.status === "open") {
+    const chosen = pendingChoice || me.my_choice;
+    if (chosen) return view(`<p class="gold" style="letter-spacing:.2em;font-weight:800">QUESTION ${s.round}</p>
+        <div class="big" style="margin:16px 0">${chosen}</div><h2>Locked in!</h2><p>Waiting for the gate to close&hellip;</p>`);
+    const q = Q[s.round-1];
+    view(`<div class="timer" id="tm"></div><p class="gold" style="letter-spacing:.15em;font-weight:800;font-size:14px">QUESTION ${s.round} OF ${N}</p>
+      <p style="font-weight:600;margin-top:6px">${esc(q.q)}</p>
+      <div class="grid">${q.choices.map((c,i)=>{const L="ABCD"[i];return `<button class="ans" style="background:var(--${L})" onclick="pick('${L}')"><span class="L">${L}</span><span>${esc(c)}</span></button>`;}).join("")}</div>`);
+    const opened = Date.parse(s.opened_at);
+    const t = () => { const left = Math.max(0, Math.ceil(SEC - (API.now() - opened)/1000)); const el = $("#tm"); if (el) el.textContent = left + " seconds"; };
+    t(); timerH = setInterval(t, 250);
+    return;
+  }
+  if (s.status === "closed") {
+    const chosen = pendingChoice || me.my_choice;
+    return view(`<h1>Time's up!</h1>${chosen ? `<p>You picked</p><div class="big" style="margin:12px 0">${chosen}</div>` : `<p>No answer this time.</p>`}<p class="pulse">Watch for the answer&hellip;</p>`);
+  }
+  if (s.status === "revealed") {
+    const ans = me.round_answer, chosen = me.my_choice;
+    let head;
+    if (!chosen) head = `<h1 class="no">No answer</h1><p>The answer was <b>${ans||"?"}</b></p>`;
+    else if (chosen === ans) head = `<h1 class="ok">Correct!</h1><div class="big gold" style="font-size:54px;margin:10px 0">+${(me.round_points||0).toLocaleString()}</div>`;
+    else head = `<h1 class="no">Not quite</h1><p>You picked <b>${chosen}</b> &mdash; the answer was <b>${ans||"?"}</b></p>`;
+    return view(head + statsCard());
+  }
+  if (s.status === "leaderboard") return view(`<h1>Leaderboard</h1><p>Check the big screen!</p>${statsCard()}`);
+  if (s.status === "final") {
+    if (s.round < 3) return view(`<h1>And the winners are&hellip;</h1><p class="pulse">Eyes on the big screen!</p>`);
+    const place = me.rank, suf = (n)=>n+(["th","st","nd","rd"][(n%100>10&&n%100<14)?0:(n%10<4?n%10:0)]);
+    const win = place && place <= 3 && me.score > 0;
+    return view(`<p class="gold" style="letter-spacing:.2em;font-weight:800">FINAL</p>
+      <div class="big" style="margin:10px 0">${place?suf(place):"-"}</div><h2>${win?"You're in the winner's circle!":"Thanks for playing!"}</h2>
+      ${win?`<div class="card"><p style="font-weight:700">${esc(C.prizeText)}</p></div>`:""}${statsCard()}`);
+  }
+}
+
+async function poll(){
+  try {
+    const st = await API.state(); failCount = 0;
+    const changed = !state || st.status !== state.status || st.round !== state.round;
+    if (changed && st.status === "open") pendingChoice = null;
+    state = st;
+    if (changed || !me || (st.status === "revealed" && me.joined && !me.round_answer)) await refreshMe();
+    render(false);
+  } catch(e){
+    if (++failCount === 3) view(`<h1>Reconnecting&hellip;</h1><p>Can't reach the game server. Make sure you're on Wi-Fi or have signal.</p>`);
+  }
+}
+(async function(){ await refreshMe(); await poll(); setInterval(poll, 1200); })();
+</script>
+</body>
+</html>

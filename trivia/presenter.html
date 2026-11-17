@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Derby Trivia — Presenter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#0d3b2e;--green2:#14523f;--rose:#b5152b;--gold:#d4af37;--cream:#f7f1e3;--ink:#10241d;
+        --A:#b5152b;--B:#c9962a;--C:#1f7a5a;--D:#24427a;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:Montserrat,Arial,sans-serif}
+  #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;
+    background:radial-gradient(ellipse at 50% 30%,var(--green2) 0%,var(--green) 60%,#082820 100%);color:var(--cream);overflow:hidden}
+  #stage::before{content:"";position:absolute;inset:28px;border:3px solid rgba(212,175,55,.55);border-radius:18px;pointer-events:none}
+  #stage::after{content:"";position:absolute;inset:40px;border:1px solid rgba(212,175,55,.3);border-radius:12px;pointer-events:none}
+  .slide{position:absolute;inset:0;padding:90px 120px;display:flex;flex-direction:column}
+  .serif{font-family:"Playfair Display",Georgia,serif}
+  .gold{color:var(--gold)}
+  .topbar{display:flex;justify-content:space-between;align-items:center;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:26px;color:var(--gold)}
+  .logo{height:90px;max-width:420px;object-fit:contain;background:#fff;border-radius:10px;padding:8px 14px}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  h1.big{font-size:150px;line-height:1;font-weight:900}
+  .rule{width:520px;height:4px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:36px auto}
+  .sub{font-size:40px;font-weight:600;opacity:.9}
+  /* join */
+  .join{flex:1;display:flex;align-items:center;gap:90px}
+  .qrbox{background:#fff;padding:26px;border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .steps{font-size:44px;line-height:1.5}
+  .steps b{color:var(--gold)}
+  .count{margin-top:40px;font-size:64px;font-weight:800}
+  .count span{color:var(--gold);font-size:110px;font-family:"Playfair Display",serif}
+  .url{margin-top:20px;font-size:26px;opacity:.75;word-break:break-all}
+  .warn{background:var(--rose);color:#fff;padding:18px 26px;border-radius:12px;font-size:28px;font-weight:700;margin-top:24px}
+  /* question */
+  .qhead{display:flex;justify-content:space-between;align-items:center}
+  .qnum{font-size:34px;font-weight:800;letter-spacing:.2em;color:var(--gold);text-transform:uppercase}
+  .qtext{font-family:"Playfair Display",serif;font-weight:900;font-size:76px;line-height:1.15;margin:40px 0 50px;min-height:180px}
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:30px;flex:1;align-content:start}
+  .ch{position:relative;display:flex;align-items:center;gap:30px;padding:30px 36px;border-radius:20px;font-size:46px;font-weight:700;
+      background:rgba(255,255,255,.08);border:3px solid rgba(255,255,255,.18);overflow:hidden;min-height:150px;transition:all .4s}
+  .ch .L{flex:none;width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:800;color:#fff}
+  .ch .t{position:relative;z-index:1}
+  .ch .bar{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.12);width:0;transition:width 1s ease-out}
+  .ch .n{margin-left:auto;position:relative;z-index:1;font-size:40px;opacity:0;transition:opacity .4s}
+  .revealed .ch .n{opacity:1}
+  .revealed .ch.wrong{opacity:.35}
+  .revealed .ch.right{background:rgba(212,175,55,.25);border-color:var(--gold);box-shadow:0 0 40px rgba(212,175,55,.6);transform:scale(1.03)}
+  .fact{margin-top:30px;font-size:36px;font-weight:600;color:var(--cream);background:rgba(0,0,0,.25);border-left:8px solid var(--gold);padding:20px 30px;border-radius:8px;opacity:0;transition:opacity .6s}
+  .revealed .fact{opacity:1}
+  .timer{position:relative;width:170px;height:170px}
+  .timer svg{transform:rotate(-90deg)}
+  .timer .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:800;font-family:"Playfair Display",serif}
+  .pill{font-size:34px;font-weight:700;background:rgba(0,0,0,.3);padding:14px 30px;border-radius:40px}
+  .pill b{color:var(--gold)}
+  .banner{font-family:"Playfair Display",serif;font-size:60px;font-weight:900;color:var(--gold)}
+  /* leaderboard */
+  .lb{width:1300px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  .lbrow{display:flex;align-items:center;gap:30px;font-size:44px;font-weight:700;background:rgba(255,255,255,.08);padding:14px 34px;border-radius:14px;
+         opacity:0;transform:translateX(-40px);animation:slidein .5s forwards}
+  .lbrow .rk{width:80px;color:var(--gold);font-family:"Playfair Display",serif;font-weight:900}
+  .lbrow .nm{flex:1}
+  .lbrow .sc{font-variant-numeric:tabular-nums}
+  @keyframes slidein{to{opacity:1;transform:none}}
+  /* podium */
+  .podium{flex:1;display:flex;align-items:flex-end;justify-content:center;gap:50px;padding-bottom:20px}
+  .pod{width:460px;text-align:center;opacity:0;transform:translateY(60px);transition:all .8s}
+  .pod.show{opacity:1;transform:none}
+  .pod .nm{font-family:"Playfair Display",serif;font-size:58px;font-weight:900;margin-bottom:10px}
+  .pod .sc{font-size:34px;margin-bottom:18px;opacity:.85}
+  .pod .blk{border-radius:16px 16px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:20px;font-family:"Playfair Display",serif;font-size:120px;font-weight:900;color:var(--ink)}
+  .p1 .blk{height:440px;background:linear-gradient(var(--gold),#a8862a)}
+  .p2 .blk{height:330px;background:linear-gradient(#e2e2e2,#9da3a6)}
+  .p3 .blk{height:250px;background:linear-gradient(#d9905a,#9c5d2e)}
+  /* chrome */
+  #ctl{position:fixed;right:14px;bottom:12px;display:flex;gap:6px;opacity:.25;transition:opacity .3s;z-index:20}
+  #ctl:hover{opacity:1}
+  #ctl button{font:600 13px Montserrat,sans-serif;padding:7px 12px;border-radius:6px;border:0;background:#333;color:#fff;cursor:pointer}
+  #ctl button.red{background:#8b1020}
+  #ctl span{color:#aaa;font:12px Montserrat;align-self:center;padding:0 6px}
+  #pin{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:30}
+  #pin form{background:var(--cream);color:var(--ink);padding:40px;border-radius:14px;text-align:center;font-family:Montserrat}
+  #pin input{font-size:28px;padding:10px;width:220px;text-align:center;margin:16px 0;border:2px solid #999;border-radius:8px}
+  #pin button{font-size:20px;padding:10px 26px;border:0;border-radius:8px;background:var(--green);color:#fff;cursor:pointer}
+  #err{position:fixed;left:14px;bottom:12px;background:#8b1020;color:#fff;font:600 14px Montserrat;padding:8px 14px;border-radius:6px;display:none;z-index:20}
+  #demo{position:fixed;left:14px;top:12px;background:#c9962a;color:#000;font:800 13px Montserrat;padding:6px 12px;border-radius:6px;z-index:20}
+  canvas#confetti{position:absolute;inset:0;pointer-events:none;z-index:5}
+</style>
+</head>
+<body>
+<div id="stage"><div id="slide"></div><canvas id="confetti" width="1920" height="1080"></canvas></div>
+<div id="ctl"><span id="pos"></span><button onclick="go(-1)">&#9664; Back</button><button onclick="go(1)">Next &#9654;</button>
+  <button onclick="toggleFS()">Fullscreen</button><button class="red" onclick="resetGame()">Reset game</button></div>
+<div id="err"></div>
+<div id="pin" style="display:none"><form onsubmit="return tryPin(event)"><div style="font-size:22px;font-weight:700">Host PIN</div>
+  <input id="pinIn" type="password" inputmode="numeric" autocomplete="off"><br><button>Start</button><div id="pinMsg" style="color:#b5152b;margin-top:10px"></div></form></div>
+
+<script src="config.js"></script>
+<script src="game-api.js"></script>
+<script src="qr.js"></script>
+<script>
+const C = GAME_CONFIG, API = GameAPI, Q = C.questions, N = Q.length, SEC = C.secondsPerQuestion || 20;
+const $ = (s) => document.querySelector(s);
+let PIN = sessionStorage.getItem("derbyPin") || "";
+if (API.DEMO) { document.body.insertAdjacentHTML("beforeend", '<div id="demo">DEMO MODE — fake answer key</div>'); PIN = "demo"; }
+
+// ---------- stage scaling ----------
+function fit(){ const s=Math.min(innerWidth/1920, innerHeight/1080); $("#stage").style.transform=`translate(-50%,-50%) scale(${s})`; }
+addEventListener("resize", fit); fit();
+function toggleFS(){ document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(()=>{}); }
+
+// ---------- play URL ----------
+function playUrl(){
+  if (C.playUrl) return C.playUrl + (API.DEMO ? (C.playUrl.includes("?")?"&":"?")+"demo" : "");
+  const u = new URL("play.html", location.href); if (API.DEMO) u.search = "?demo"; return u.href;
+}
+
+// ---------- build the step list ----------
+// each step: {type, round, status, sub}
+const steps = [{type:"title", round:0, status:"idle"}, {type:"join", round:0, status:"join"}];
+for (let i=1;i<=N;i++){
+  steps.push({type:"q", round:i, status:"idle", sub:"ready"});
+  steps.push({type:"q", round:i, status:"open", sub:"open"});
+  steps.push({type:"q", round:i, status:"closed", sub:"closed"});
+  steps.push({type:"q", round:i, status:"revealed", sub:"revealed"});
+  if (i % (C.leaderboardEvery||5) === 0 && i < N) steps.push({type:"lb", round:i, status:"leaderboard"});
+}
+steps.push({type:"final", round:0, status:"final"});
+for (let k=1;k<=3;k++) steps.push({type:"final", round:k, status:"final"});
+
+let idx = Math.min(+(localStorage.getItem("derbyStep"+(API.DEMO?"Demo":""))||0), steps.length-1);
+let timerHandle = null, pollHandle = null, openedAt = null;
+
+function showErr(m){ const e=$("#err"); e.textContent=m; e.style.display=m?"block":"none"; }
+
+async function send(step){
+  try { const r = await API.hostControl(PIN, step.round, step.status);
+        if (r === "bad_pin") { showErr("Host PIN rejected"); askPin(); } else showErr(""); }
+  catch(e){ showErr("Can't reach the game server — " + e.message); }
+}
+
+async function go(d){
+  const nxt = idx + d; if (nxt < 0 || nxt >= steps.length) return;
+  idx = nxt; localStorage.setItem("derbyStep"+(API.DEMO?"Demo":""), idx);
+  await render(true);
+}
+
+addEventListener("keydown", (e) => {
+  if (!$("#pin").style.display || $("#pin").style.display === "none") {
+    if (["ArrowRight","PageDown"," ","Enter"].includes(e.key)) { e.preventDefault(); go(1); }
+    if (["ArrowLeft","PageUp","Backspace"].includes(e.key)) { e.preventDefault(); go(-1); }
+    if (e.key === "f" || e.key === "F") toggleFS();
+  }
+});
+
+async function resetGame(){
+  if (!confirm("Reset the game? This deletes all players and answers and returns to the title slide.")) return;
+  try { const r = await API.hostReset(PIN); if (r === "bad_pin") return askPin(); } catch(e){ return showErr(e.message); }
+  idx = 0; localStorage.setItem("derbyStep"+(API.DEMO?"Demo":""), 0); render(true);
+}
+
+// ---------- PIN ----------
+function askPin(){ $("#pin").style.display="flex"; setTimeout(()=>$("#pinIn").focus(),50); }
+async function tryPin(e){
+  e.preventDefault(); const p = $("#pinIn").value.trim();
+  try { if (await API.hostLogin(p)) { PIN=p; sessionStorage.setItem("derbyPin",p); $("#pin").style.display="none"; render(false); }
+        else $("#pinMsg").textContent="Wrong PIN"; }
+  catch(err){ $("#pinMsg").textContent="Can't reach the game server. Check config.js / setup.sql."; }
+  return false;
+}
+
+// ---------- rendering ----------
+const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const logoTag = () => C.logo ? `<img class="logo" src="${esc(C.logo)}" onerror="this.remove()">` : "";
+const topBar = (right) => `<div class="topbar"><div>${logoTag() || esc(C.org)}</div><div>${right||""}</div></div>`;
+
+function clearTimers(){ clearInterval(timerHandle); clearInterval(pollHandle); timerHandle = pollHandle = null; }
+
+async function render(push){
+  clearTimers(); stopConfetti();
+  const s = steps[idx]; $("#pos").textContent = (idx+1)+"/"+steps.length;
+  if (push) await send(s);
+  const el = $("#slide");
+
+  if (s.type === "title") {
+    el.innerHTML = `<div class="slide">${topBar(esc(C.org))}<div class="center">
+      <div class="sub gold" style="letter-spacing:.3em;text-transform:uppercase;font-weight:800">Day at the Downs</div>
+      <h1 class="big serif" style="margin-top:20px">${esc(C.title)}</h1><div class="rule"></div>
+      <div class="sub">${esc(C.subtitle)}</div>
+      <div class="sub" style="margin-top:60px;font-size:32px;opacity:.7">${N} questions on Churchill Downs &amp; the Kentucky Derby</div></div></div>`;
+  }
+
+  if (s.type === "join") {
+    const url = playUrl(), bad = url.startsWith("file:");
+    el.innerHTML = `<div class="slide">${topBar("Join the game")}<div class="join">
+      <div class="qrbox" id="qr"></div>
+      <div><div class="serif" style="font-size:80px;font-weight:900;margin-bottom:30px">Grab your phone!</div>
+      <div class="steps">1. Scan the code with your camera<br>2. Enter your <b>first name &amp; last initial</b><br>3. Answer fast &mdash; <b>speed earns bonus points</b></div>
+      <div class="count"><span id="pc">0</span> players in the gate</div>
+      <div class="url">${esc(url)}</div>
+      ${bad ? '<div class="warn">This presenter was opened from a file on this computer — phones can\'t use this QR code. Open the GitHub Pages link instead.</div>' : ""}
+      </div></div></div>`;
+    drawQR($("#qr"), url, 560);
+    const poll = async () => { try { $("#pc").textContent = await API.playerCount(); } catch(e){} };
+    poll(); pollHandle = setInterval(poll, 2000);
+  }
+
+  if (s.type === "q") renderQuestion(s, el);
+
+  if (s.type === "lb") {
+    el.innerHTML = `<div class="slide">${topBar("After question " + s.round + " of " + N)}
+      <div class="serif gold" style="font-size:90px;font-weight:900;text-align:center;margin:10px 0 40px">Leaderboard</div><div class="lb" id="lb"></div></div>`;
+    try {
+      const rows = await API.leaderboard(8);
+      $("#lb").innerHTML = rows.length ? rows.map((r,i)=>`<div class="lbrow" style="animation-delay:${(rows.length-i)*0.15}s">
+        <div class="rk">${r.rank}</div><div class="nm">${esc(r.name)}</div><div class="sc">${r.score.toLocaleString()}</div></div>`).join("")
+        : `<div class="sub" style="text-align:center">No players yet</div>`;
+    } catch(e){ showErr(e.message); }
+  }
+
+  if (s.type === "final") {
+    let rows = []; try { rows = await API.leaderboard(10); } catch(e){ showErr(e.message); }
+    const shown = s.round;   // 0 = suspense, 1 = 3rd, 2 = 2nd, 3 = 1st
+    const p = (place) => rows[place-1];
+    const pod = (place) => { const r = p(place); const vis = r && shown >= 4-place;
+      return `<div class="pod p${place} ${vis?"show":""}"><div class="nm">${r?esc(r.name):"&nbsp;"}</div>
+              <div class="sc">${r?r.score.toLocaleString()+" pts":""}</div><div class="blk">${place}</div></div>`; };
+    el.innerHTML = `<div class="slide">${topBar("Final results")}
+      <div class="serif" style="font-size:96px;font-weight:900;text-align:center;margin-top:10px">${shown>=3?'And the winner is&hellip; <span class="gold">'+esc(p(1)?p(1).name:"")+'</span>':"And the winners are&hellip;"}</div>
+      <div class="podium">${pod(2)}${pod(1)}${pod(3)}</div></div>`;
+    if (shown >= 3) startConfetti();
+  }
+}
+
+function renderQuestion(s, el){
+  const q = Q[s.round-1];
+  const sub = s.sub;
+  el.innerHTML = `<div class="slide ${sub==="revealed"?"revealed":""}" id="qs">
+    <div class="qhead"><div class="qnum">Question ${s.round} of ${N}</div>
+      <div id="qright">${sub==="ready"?'<div class="pill">Get your phones ready&hellip;</div>':""}</div></div>
+    <div class="qtext">${esc(q.q)}</div>
+    <div class="choices">${q.choices.map((c,i)=>{const L="ABCD"[i]; return `<div class="ch" id="ch${L}"><div class="bar"></div>
+       <div class="L" style="background:var(--${L})">${L}</div><div class="t">${esc(c)}</div><div class="n" id="n${L}"></div></div>`;}).join("")}</div>
+    <div class="fact" id="fact">${esc(q.fact||"")}</div></div>`;
+
+  if (sub === "open") {
+    $("#qright").innerHTML = `<div style="display:flex;align-items:center;gap:40px"><div class="pill"><b id="ans">0</b> answers in</div>
+      <div class="timer"><svg width="170" height="170"><circle cx="85" cy="85" r="74" stroke="rgba(255,255,255,.15)" stroke-width="14" fill="none"/>
+      <circle id="arc" cx="85" cy="85" r="74" stroke="#d4af37" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="465" stroke-dashoffset="0"/></svg>
+      <div class="num" id="tn">${SEC}</div></div></div>`;
+    openedAt = null;
+    const myIdx = idx;
+    const tick = async () => {
+      try {
+        if (!openedAt) { const st = await API.state(); if (st.status==="open" && st.round===s.round && st.opened_at) openedAt = Date.parse(st.opened_at); }
+        const r = await API.roundStats(s.round); if ($("#ans")) $("#ans").textContent = r.total + (r.players ? " / " + r.players : "");
+        if (r.players && r.total >= r.players && idx === myIdx) { clearTimers(); setTimeout(()=>{ if(idx===myIdx) go(1); }, 800); }
+      } catch(e){ showErr(e.message); }
+    };
+    tick(); pollHandle = setInterval(tick, 1000);
+    timerHandle = setInterval(() => {
+      if (!openedAt) return;
+      const left = Math.max(0, SEC - (API.now() - openedAt)/1000);
+      if ($("#tn")) { $("#tn").textContent = Math.ceil(left); $("#arc").setAttribute("stroke-dashoffset", 465*(1-left/SEC)); }
+      if (left <= 0 && idx === myIdx) { clearTimers(); go(1); }
+    }, 100);
+  }
+  if (sub === "closed") $("#qright").innerHTML = `<div class="banner">Time's up!</div>`;
+  if (sub === "revealed") showReveal(s);
+}
+
+async function showReveal(s){
+  try {
+    let ans = null;
+    if (API.DEMO) { ans = "ABCD"[(s.round*7+1)%4]; }
+    else { const rows = await fetchReveal(s.round); ans = rows; }
+    const st = await API.roundStats(s.round);
+    const total = st.total || 0;
+    "ABCD".split("").forEach(L => {
+      const ch = $("#ch"+L); if (!ch) return;
+      ch.classList.add(L===ans ? "right" : "wrong");
+      const n = st.counts ? st.counts[L] : 0;
+      $("#n"+L).textContent = n;
+      setTimeout(()=>{ ch.querySelector(".bar").style.width = (total ? (100*n/total) : 0) + "%"; }, 50);
+    });
+    const pct = total && st.counts ? Math.round(100*st.counts[ans]/total) : 0;
+    $("#qright").innerHTML = `<div class="pill"><b>${pct}%</b> got it right</div>`;
+  } catch(e){ showErr(e.message); }
+}
+async function fetchReveal(round){
+  // public table written by host_control at reveal time
+  const res = await fetch(C.supabaseUrl.replace(/\/$/,"") + "/rest/v1/dl_round_answers?round=eq."+round+"&select=answer",
+    { headers:{apikey:C.supabaseKey, Authorization:"Bearer "+C.supabaseKey}, cache:"no-store" });
+  const rows = await res.json(); return rows.length ? rows[0].answer : null;
+}
+
+// ---------- confetti ----------
+let confettiRAF = null;
+function startConfetti(){
+  const cv = $("#confetti"), cx = cv.getContext("2d"), cols = ["#d4af37","#b5152b","#f7f1e3","#1f7a5a","#ffffff"];
+  const ps = Array.from({length:260},()=>({x:Math.random()*1920,y:-Math.random()*1080,w:10+Math.random()*12,h:6+Math.random()*8,
+    vy:3+Math.random()*5,vx:-2+Math.random()*4,r:Math.random()*6,vr:-.2+Math.random()*.4,c:cols[Math.floor(Math.random()*cols.length)]}));
+  (function f(){ cx.clearRect(0,0,1920,1080);
+    ps.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>1100){p.y=-20;p.x=Math.random()*1920;}
+      cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cx.restore();});
+    confettiRAF = requestAnimationFrame(f); })();
+}
+function stopConfetti(){ cancelAnimationFrame(confettiRAF); const cv=$("#confetti"); cv.getContext("2d").clearRect(0,0,1920,1080); }
+
+// ---------- start ----------
+(async function(){
+  if (!API.DEMO && !PIN) { askPin(); }
+  await render(false);   // don't push state on load (avoids re-opening a question after a refresh)
+})();
+</script>
+</body>
+</html>
