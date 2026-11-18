@@ -19,9 +19,7 @@
   .serif{font-family:"Playfair Display",Georgia,serif}
   .gold{color:var(--gold)}
   .topbar{display:flex;justify-content:space-between;align-items:center;font-weight:700;letter-spacing:.18em;text-transform:uppercase;font-size:26px;color:var(--gold)}
-  .logo{height:84px;max-width:460px;object-fit:contain;background:#fff;border-radius:10px;padding:8px 14px}
-  .qhead .logo{height:72px;position:absolute;left:50%;transform:translateX(-50%)}
-  .qhead{position:relative}
+  .logo{height:90px;max-width:420px;object-fit:contain;background:#fff;border-radius:10px;padding:8px 14px}
   .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   h1.big{font-size:150px;line-height:1;font-weight:900}
   .rule{width:520px;height:4px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:36px auto}
@@ -49,11 +47,21 @@
   .revealed .ch .n{opacity:1}
   .revealed .ch.wrong{opacity:.35}
   .revealed .ch.right{background:rgba(212,175,55,.25);border-color:var(--gold);box-shadow:0 0 40px rgba(212,175,55,.6);transform:scale(1.03)}
-  .art{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
-  .art .art-svg{height:520px;width:auto;max-width:100%;filter:drop-shadow(0 18px 30px rgba(0,0,0,.45));animation:artin .7s ease-out}
-  @keyframes artin{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
   .fact{margin-top:30px;font-size:36px;font-weight:600;color:var(--cream);background:rgba(0,0,0,.25);border-left:8px solid var(--gold);padding:20px 30px;border-radius:8px;opacity:0;transition:opacity .6s}
   .revealed .fact{opacity:1}
+  /* member questions (Two Truths & a Lie): headshot + logo beside the question */
+  .qbody{display:flex;gap:60px;flex:1;min-height:0}
+  .who{flex:none;width:340px;display:flex;flex-direction:column;align-items:center;gap:22px;padding-top:10px}
+  .who .ph{width:320px;height:320px;border-radius:50%;object-fit:cover;border:8px solid var(--gold);box-shadow:0 18px 50px rgba(0,0,0,.5);background:#fff}
+  .who .nm{font-family:"Playfair Display",serif;font-size:46px;font-weight:900;text-align:center;line-height:1.1}
+  .who .co{width:320px;height:110px;object-fit:contain;background:#fff;border-radius:12px;padding:14px 20px}
+  .qmain{flex:1;display:flex;flex-direction:column;min-width:0}
+  .ttal{font-size:30px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-top:20px}
+  .member .qtext{font-size:68px;margin:14px 0 34px;min-height:0}
+  .member .choices{grid-template-columns:1fr;gap:22px;flex:none}
+  .member .ch{font-size:40px;min-height:116px;padding:20px 32px}
+  .member .ch .L{width:80px;height:80px;font-size:46px}
+  .member .fact{margin-top:26px;font-size:34px}
   .timer{position:relative;width:170px;height:170px}
   .timer svg{transform:rotate(-90deg)}
   .timer .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:72px;font-weight:800;font-family:"Playfair Display",serif}
@@ -104,7 +112,6 @@
 <script src="config.js"></script>
 <script src="game-api.js"></script>
 <script src="qr.js"></script>
-<script src="art.js"></script>
 <script>
 const C = GAME_CONFIG, API = GameAPI, Q = C.questions, N = Q.length, SEC = C.secondsPerQuestion || 20;
 const $ = (s) => document.querySelector(s);
@@ -190,10 +197,11 @@ async function render(push){
   const el = $("#slide");
 
   if (s.type === "title") {
-    el.innerHTML = `<div class="slide">${topBar("")}<div class="center">
-      <h1 class="big serif">${esc(C.title)}</h1><div class="rule"></div>
+    el.innerHTML = `<div class="slide">${topBar(esc(C.org))}<div class="center">
+      <div class="sub gold" style="letter-spacing:.3em;text-transform:uppercase;font-weight:800">Day at the Downs</div>
+      <h1 class="big serif" style="margin-top:20px">${esc(C.title)}</h1><div class="rule"></div>
       <div class="sub">${esc(C.subtitle)}</div>
-      <div class="sub" style="margin-top:60px;font-size:32px;opacity:.7">${N} questions on Churchill Downs &amp; the Kentucky Derby</div></div></div>`;
+      <div class="sub" style="margin-top:60px;font-size:32px;opacity:.7">${esc(C.titleBlurb || (N + " questions on Churchill Downs & the Kentucky Derby"))}</div></div></div>`;
   }
 
   if (s.type === "join") {
@@ -241,15 +249,19 @@ async function render(push){
 function renderQuestion(s, el){
   const q = Q[s.round-1];
   const sub = s.sub;
-  el.innerHTML = `<div class="slide ${sub==="revealed"?"revealed":""}" id="qs">
-    <div class="qhead"><div class="qnum">Question ${s.round} of ${N}</div>${logoTag()}
-      <div id="qright">${sub==="ready"?'<div class="pill">Get your phones ready&hellip;</div>':""}</div></div>
-    <div class="qtext">${esc(q.q)}</div>
-    ${sub==="ready"
-      ? `<div class="art">${(window.ART||[])[s.round-1]||""}</div>`
-      : `<div class="choices">${q.choices.map((c,i)=>{const L="ABCD"[i]; return `<div class="ch" id="ch${L}"><div class="bar"></div>
+  const choicesHTML = `<div class="choices">${q.choices.map((c,i)=>{const L="ABCD"[i]; return `<div class="ch" id="ch${L}"><div class="bar"></div>
        <div class="L" style="background:var(--${L})">${L}</div><div class="t">${esc(c)}</div><div class="n" id="n${L}"></div></div>`;}).join("")}</div>
-    <div class="fact" id="fact">${esc(q.fact||"")}</div>`}</div>`;
+    <div class="fact" id="fact">${esc(q.fact||"")}</div>`;
+  const body = q.photo
+    ? `<div class="qbody"><div class="who"><img class="ph" src="${esc(q.photo)}" onerror="this.remove()">
+         ${q.name?`<div class="nm">${esc(q.name)}</div>`:""}
+         ${q.companyLogo?`<img class="co" src="${esc(q.companyLogo)}" onerror="this.remove()">`:""}</div>
+       <div class="qmain">${q.label?`<div class="ttal">${esc(q.label)}</div>`:""}<div class="qtext">${esc(q.q)}</div>${choicesHTML}</div></div>`
+    : `<div class="qtext">${esc(q.q)}</div>${choicesHTML}`;
+  el.innerHTML = `<div class="slide ${sub==="revealed"?"revealed":""} ${q.photo?"member":""}" id="qs">
+    <div class="qhead"><div class="qnum">Question ${s.round} of ${N}</div>
+      <div id="qright">${sub==="ready"?'<div class="pill">Get your phones ready&hellip;</div>':""}</div></div>
+    ${body}</div>`;
 
   if (sub === "open") {
     $("#qright").innerHTML = `<div style="display:flex;align-items:center;gap:40px"><div class="pill"><b id="ans">0</b> answers in</div>

@@ -3,23 +3,24 @@
 // =====================================================================
 window.GAME_CONFIG = {
   // ---- Supabase (NACM project) : Project Settings -> API Keys ----
-  supabaseUrl: "https://lbslumqezhxcebojmpip.supabase.co",
-  supabaseKey: "sb_publishable_IFEZmvF1Jq3ZFxmq3jJWbg_YLtLFg23",   // publishable key ONLY, never the secret key
+  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
+  supabaseKey: "sb_publishable_PASTE_YOUR_PUBLISHABLE_KEY_HERE",   // publishable key ONLY, never the secret key
 
   // Phone link shown in the QR code. Leave "" to build it automatically from the
   // presenter's address (works as long as you open the presenter from GitHub Pages).
   playUrl: "",
 
   // ---- Branding ----
-  org: "NACM Day at the Downs",
+  org: "NACM South Central",
   title: "Derby Trivia",
-  subtitle: "Churchill Downs • November 19, 2026",
-  logo: "images/logo.png",            // NACM Day at the Downs logo
+  subtitle: "Day at the Downs • Churchill Downs • November 19, 2026",
+  titleBlurb: "Derby trivia + Two Truths & a Lie",
+  logo: "images/logo.png",            // drop the NACM South Central logo here (optional)
 
   // ---- Game settings ----
   secondsPerQuestion: 20,             // must match "seconds" in the database (default 20)
   leaderboardEvery: 5,                // show the leaderboard after every N questions
-  prizeText: "Congratulations! See an NACM team member to claim your prize.",
+  prizeText: "Congratulations! See the NACM South Central team to claim your prize.",
 
   // ---- Questions (answers are NOT here — they live only in the database) ----
   questions: [
@@ -81,6 +82,32 @@ window.GAME_CONFIG = {
 
     { q: "In May 2026, Golden Tempo won the 152nd Derby. What made trainer Cherie DeVaux historic?",
       choices: ["Youngest trainer ever to win", "First to win from the far outside post", "First woman to train a Derby winner", "First to win with a gray horse"],
-      fact: "Golden Tempo rallied from last at 23-1 under jockey José Ortiz." }
+      fact: "Golden Tempo rallied from last at 23-1 under jockey José Ortiz." },
+
+  // ---- Two Truths & a Lie (members). photo / name / companyLogo / label are optional
+  //      and only change the presenter screen. Answer key: rounds 16-18 in Supabase. ----
+  { label: "Two Truths & a Lie", name: "Bill Weiss",
+    photo: "images/bill.jpg", companyLogo: "images/logo-moodys.png",
+    q: "Which one is Bill's LIE?",
+    choices: ["I led police on a high-speed car chase — and got away.",
+              "I won an over-50 weightlifting competition.",
+              "I got thrown out of a bar for fighting with my brother-in-law."],
+    fact: "The weightlifting title is the lie. The car chase and the bar fight? Both true!" },
+
+  { label: "Two Truths & a Lie", name: "Rocky Thomas",
+    photo: "images/rocky.jpg", companyLogo: "images/logo-southeast.png",
+    q: "Which one is Rocky's LIE?",
+    choices: ["I have eight grandchildren.",
+              "I once had lunch with Princess Diana's brother, Charles Spencer.",
+              "My family tree traces back to Thomas Jefferson."],
+    fact: "No Jefferson in the family tree! The eight grandkids and lunch with Earl Spencer are both true." },
+
+  { label: "Two Truths & a Lie", name: "Tony Clark",
+    photo: "images/tony.jpg", companyLogo: "images/logo-southcentral.png",
+    q: "Which one is Tony's LIE?",
+    choices: ["I was a hand model for Kay Jewelers in college.",
+              "I have a twin sister.",
+              "I have jumped out of a perfectly good airplane."],
+    fact: "No Kay Jewelers ads for these hands! The twin sister and the skydive are both true." }
   ]
 };
