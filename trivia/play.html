@@ -12,6 +12,7 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{min-height:100%;background:radial-gradient(ellipse at 50% 0%,var(--green2),var(--green) 70%);color:var(--cream);font-family:Montserrat,Arial,sans-serif}
   body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+  header .lg{height:30px;background:#fff;border-radius:6px;padding:3px 6px;display:block}
   header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(212,175,55,.35)}
   main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:20px;text-align:center}
   h1{font-family:"Playfair Display",serif;font-weight:900;font-size:34px;line-height:1.15;margin-bottom:10px}
@@ -47,7 +48,7 @@
 const C = GAME_CONFIG, API = GameAPI, Q = C.questions, N = Q.length, SEC = C.secondsPerQuestion || 20;
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-$("#org").textContent = C.org;
+$("#org").innerHTML = C.logo ? `<img class="lg" src="${esc(C.logo)}" alt="${esc(C.org)}" onerror="this.parentNode.textContent='${esc(C.org)}'">` : esc(C.org);
 
 // device id: localStorage live (survives refresh); per-tab in demo so several tabs = several players
 const store = API.DEMO ? sessionStorage : localStorage, DKEY = "derbyDevice";
