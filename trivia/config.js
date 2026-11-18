@@ -13,7 +13,7 @@ window.GAME_CONFIG = {
   // ---- Branding ----
   org: "NACM South Central",
   title: "Derby Trivia",
-  subtitle: "Day at the Downs • Churchill Downs • November 19, 2026",
+  subtitle: "Churchill Downs • November 19, 2026",
   logo: "images/logo.png",            // drop the NACM South Central logo here (optional)
 
   // ---- Game settings ----

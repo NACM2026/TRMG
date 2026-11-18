@@ -191,8 +191,7 @@ async function render(push){
 
   if (s.type === "title") {
     el.innerHTML = `<div class="slide">${topBar(esc(C.org))}<div class="center">
-      <div class="sub gold" style="letter-spacing:.3em;text-transform:uppercase;font-weight:800">Day at the Downs</div>
-      <h1 class="big serif" style="margin-top:20px">${esc(C.title)}</h1><div class="rule"></div>
+      <h1 class="big serif">${esc(C.title)}</h1><div class="rule"></div>
       <div class="sub">${esc(C.subtitle)}</div>
       <div class="sub" style="margin-top:60px;font-size:32px;opacity:.7">${N} questions on Churchill Downs &amp; the Kentucky Derby</div></div></div>`;
   }
