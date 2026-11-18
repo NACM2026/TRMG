@@ -11,15 +11,15 @@ window.GAME_CONFIG = {
   playUrl: "",
 
   // ---- Branding ----
-  org: "NACM South Central",
+  org: "NACM Day at the Downs",
   title: "Derby Trivia",
   subtitle: "Churchill Downs • November 19, 2026",
-  logo: "images/logo.png",            // drop the NACM South Central logo here (optional)
+  logo: "images/logo.png",            // NACM Day at the Downs logo
 
   // ---- Game settings ----
   secondsPerQuestion: 20,             // must match "seconds" in the database (default 20)
   leaderboardEvery: 5,                // show the leaderboard after every N questions
-  prizeText: "Congratulations! See the NACM South Central team to claim your prize.",
+  prizeText: "Congratulations! See an NACM team member to claim your prize.",
 
   // ---- Questions (answers are NOT here — they live only in the database) ----
   questions: [
