@@ -3,8 +3,8 @@
 // =====================================================================
 window.GAME_CONFIG = {
   // ---- Supabase (NACM project) : Project Settings -> API Keys ----
-  supabaseUrl: "https://YOUR-PROJECT-REF.supabase.co",
-  supabaseKey: "sb_publishable_PASTE_YOUR_PUBLISHABLE_KEY_HERE",   // publishable key ONLY, never the secret key
+  supabaseUrl: "https://lbslumqezhxcebojmpip.supabase.co",
+  supabaseKey: "sb_publishable_IFEZmvF1Jq3ZFxmq3jJWbg_YLtLFg23",   // publishable key ONLY, never the secret key
 
   // Phone link shown in the QR code. Leave "" to build it automatically from the
   // presenter's address (works as long as you open the presenter from GitHub Pages).
